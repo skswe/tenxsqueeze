@@ -1,0 +1,5 @@
+- 14 cores
+- 17 months x 5 min bars = 146880 bars
+- 13.7 seconds per iteration
+- 10721 bars per second
+- 1.24 months per second
