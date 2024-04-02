@@ -1,3 +1,5 @@
+"""This module contains general utility functions
+"""
 import pandas as pd
 
 

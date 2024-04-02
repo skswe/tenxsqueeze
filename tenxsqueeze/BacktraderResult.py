@@ -1,3 +1,5 @@
+"""This module contains tools to analyze the results of a backtest run
+"""
 from collections import defaultdict
 
 import backtrader as bt

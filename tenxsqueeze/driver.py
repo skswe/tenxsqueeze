@@ -1,11 +1,15 @@
+"""This module is the entrypoint for the 10xsqueeze backtest
+"""
+
 import datetime
 
 import backtrader as bt
-import cryptomart as cm
 import pandas as pd
-import tenxsqueeze as txs
 from dotenv import load_dotenv
-from pyutil import cached
+from pyutil.cache import cached
+
+import cryptomart as cm
+import tenxsqueeze as txs
 
 from .ProgressCerebro import ProgressCerebro
 
@@ -79,7 +83,8 @@ class Driver:
         logging=False,
         progress_bar=False,
         log_file="log.txt",
-        save_results=True,
+        use_cache=True,
+        cache_logs: bool = False,
         squeeze_pro_length: int = 20,
         atr_length: int = 10,
         adx_length: int = 14,
@@ -90,8 +95,30 @@ class Driver:
         max_trade_duration: int = 9,
         use_good_momentum: bool = True,
         run: bool = True,
-        cache_logs: bool = False,
     ):
+        """Run the tenxsqueeze backtest
+
+        Args:
+            logging: Save action/trade logs to `log_file`. Defaults to False.
+            progress_bar: If True, shows a progress bar while the backtest is running. Defaults to False.
+            log_file: File to save logs to if `logging` is True. Defaults to "log.txt".
+            use_cache: If True, saves backtest metrics to a csv file. Defaults to True.
+            cache_logs: If True, skips backtest runs for which the parameters already exist as keys
+                in the results csv file. Defaults to False.
+            squeeze_pro_length: Window length for the SqueezePro indicator. Defaults to 20.
+            atr_length: Window length for the ATR of the SqueezePro. Defaults to 10.
+            adx_length: Window length for the ADX of the 10X Bars. Defaults to 14.
+            tp_trail_percent: Percentage for trailing stop takeprofit orders. Defaults to 0.4.
+            sl_trail_percent: Percentage for trailing stop stoploss orders. Defaults to 0.7.
+            percent_is_atr: If True, sl/tp percent refers percentage of ATR. Defaults to True.
+            tp_atr_multiplier: Number of ATR's to use as the takeprofit target. Defaults to 2.3.
+            max_trade_duration: Max number of bars to hold position before force closing. Defaults to 9.
+            use_good_momentum: If True, momentum must reset before a trade can be made. Defaults to True.
+            run: If False, returns the configured strategy instance without running it. Defaults to True.
+
+        Returns:
+            The backtest results as a pandas DataFrame if `run` is True, otherwise the configured strategy instance.
+        """
         cerebro = ProgressCerebro()
 
         granular = bt.feeds.PandasData(
@@ -107,7 +134,8 @@ class Driver:
             logging=logging,
             progress_bar=progress_bar,
             log_file=log_file,
-            save_results=save_results,
+            use_cache=use_cache,
+            cache_logs=cache_logs,
             squeeze_pro_length=squeeze_pro_length,
             atr_length=atr_length,
             adx_length=adx_length,
@@ -118,7 +146,6 @@ class Driver:
             max_trade_duration=max_trade_duration,
             use_good_momentum=use_good_momentum,
             frequency=self.frequency,
-            cache_logs=cache_logs,
         )
 
         if any(isinstance(x, list) for x in strategy_params.values()):
@@ -133,7 +160,6 @@ class Driver:
                 txs.TenXSqueeze,
                 **strategy_params,
             )
-
 
         cerebro.addanalyzer(bt.analyzers.PyFolio, _name="pyfolio")
         cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
@@ -150,7 +176,11 @@ class Driver:
             return cerebro
 
         ret = cerebro.run(stdstats=False, optreturn=False, maxcpus=14)
-        return pd.concat(ret, axis=1).T if len(ret) > 0 and isinstance(ret[0], pd.Series) else (ret[0] if len(ret) > 0 else ret)
+        return (
+            pd.concat(ret, axis=1).T
+            if len(ret) > 0 and isinstance(ret[0], pd.Series)
+            else (ret[0] if len(ret) > 0 else ret)
+        )
 
     def load_results(self, path=None):
         return pd.read_csv(path)

@@ -1,14 +1,27 @@
+"""This module contains the 10xsqueeze strategy class. It is the main strategy used for backtesting
+"""
+
 import datetime
-import os
 
 import backtrader as bt
-import numpy as np
 
 from .. import backtrader_indicators as bi
 from .BaseStrategy import BaseStrategy
 
 
 class TenXSqueeze(BaseStrategy):
+    """The 10xsqueeze strategy is a momentum based strategy which uses both the SqueezePro and 10X Bars indicators
+
+    The SqueezePro indicator measures the "squeeze" of the asset (how tight it is trading relative to a moving average) and the
+    momentum of the asset (how fast it is moving in a particular direction).
+
+    The 10X Bars indicator measures the trend of the asset and the strength of the trend.
+
+    The essence of the strategy is the belief that some assets will have a period of low volatility followed by a
+    strong movement in one direction. When there is no squeeze and the momentum is building in a particular direction,
+    the strategy will enter a trade in that direction.
+    """
+
     params = (
         ("squeeze_pro_length", 20),
         ("atr_length", 10),

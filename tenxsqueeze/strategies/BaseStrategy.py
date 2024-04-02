@@ -1,3 +1,5 @@
+"""This module provides the base class for all strategies. It contains the basic functionality for logging trades and orders."""
+
 import csv
 import datetime
 import multiprocessing
@@ -19,12 +21,17 @@ lock = multiprocessing.Lock()
 
 
 class BaseStrategy(BacktraderResult, bt.Strategy):
+    """Base class for all strategies. Provides basic logging functionality for trades and orders.
+    Expects one entry order and one take profit or stoploss order per trade. Each trade must complete
+    before the next trade can be entered.
+    """
+
     params = (
         # params
         ("logging", True),
         ("progress_bar", False),
         ("log_file", "log.txt"),
-        ("save_results", True),
+        ("use_cache", True),
         ("cache_logs", False),
     )
 
@@ -148,9 +155,12 @@ class BaseStrategy(BacktraderResult, bt.Strategy):
         else:
             log_dict = {"Datetime": dt_str, "Log": txt}
 
-        log_list = [list(log_dict.values())]
-
-        log_table = tabulate(log_list, headers=log_dict.keys(), tablefmt="rounded_outline")
+        # Values and headers are swapped to make the lines easier to read
+        log_table = tabulate(
+            [list(log_dict.keys())],
+            headers=[round(x, 2) if isinstance(x, float) else x for x in log_dict.values()],
+            tablefmt="simple",
+        )
 
         if self.params.log_file:
             with open(self.params.log_file, "a") as f:

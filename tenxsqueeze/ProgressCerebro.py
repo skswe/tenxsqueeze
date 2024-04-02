@@ -1,3 +1,5 @@
+"""This module contains the ProgressCerebro class which extends the backtrader Cerebro class to provide progress tracking, logging and caching
+"""
 import csv
 import gc
 import itertools
@@ -36,13 +38,13 @@ class ProgressCerebro(bt.Cerebro):
         del keys["logging"]
         del keys["progress_bar"]
         del keys["log_file"]
-        del keys["save_results"]
+        del keys["use_cache"]
         del keys["cache_logs"]
         keys["frequency"] = str(keys["frequency"])
         return keys
 
     def get_result_path(self, strategy: BaseStrategy):
-        root = os.path.join(os.getenv("ACTIVE_DEV_PATH", "/home/stefano/dev/active"), "10xsqueeze", "results")
+        root = os.path.join(os.getenv("ACTIVE_DEV_PATH", "../"), "10xsqueeze", "results")
         directory_keys = {
             "strategy": strategy.strategy_name if hasattr(strategy, "strategy_name") else strategy.__name__,
             "start": undo_backtrader_dt(self.datas[0]._dataname.reset_index()).open_time.iloc[0],
@@ -70,7 +72,7 @@ class ProgressCerebro(bt.Cerebro):
         return file_path, existing_files
 
     def pre_strategy(self, strategy: BaseStrategy):
-        if strategy.params.save_results:
+        if strategy.params.use_cache:
             result_path = self.get_result_path(strategy)
             keys = self.get_id_keys(strategy)
             os.makedirs(result_path, exist_ok=True)
@@ -92,7 +94,7 @@ class ProgressCerebro(bt.Cerebro):
         return False
 
     def post_strategy(self, strategy: BaseStrategy):
-        if strategy.params.save_results:
+        if strategy.params.use_cache:
             result_path = self.get_result_path(strategy)
             keys = self.get_id_keys(strategy)
             metrics = strategy.compact_analysis()
@@ -115,6 +117,7 @@ class ProgressCerebro(bt.Cerebro):
                         new_file = True
 
                 # Open the file in append mode
+                print(f"Saving results to {file_path}")
                 with open(file_path, "a", newline="") as f:
                     writer = csv.writer(f)
 
@@ -280,7 +283,7 @@ class ProgressCerebro(bt.Cerebro):
                 for data in self.datas:
                     data.stop()
 
-            return cached_strats
+            return self.runstrats[0] if len(self.runstrats) > 0 else [] + cached_strats
 
         if not self._dooptimize:
             # avoid a list of list for regular cases

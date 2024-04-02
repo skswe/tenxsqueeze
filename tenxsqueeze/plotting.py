@@ -1,3 +1,5 @@
+"""This module contains an API for plotting backtest results
+"""
 import datetime
 from typing import Tuple
 
